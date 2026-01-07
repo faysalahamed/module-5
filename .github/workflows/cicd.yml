@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: '22'
 
       - name: Install Dependencies
         run: npm install
@@ -32,24 +32,3 @@ jobs:
         with:
           name: test-results
           path: test-results.txt
-
-  deploy:
-    name: Deploy Application
-    needs: test
-    runs-on: self-hosted
-    labels: [node-deploy]
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Build Application (if needed)
-        run: npm run build || echo "No build step"
-
-      - name: Deploy Application
-        run: |
-          pm2 stop node-app || true
-          pm2 start index.js --name node-app
