@@ -2,48 +2,54 @@ name: Node.js CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ main ]
+    branches: [ "main" ]
 
 jobs:
   test:
+    name: Test Application
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: 18
 
       - name: Install Dependencies
         run: npm install
 
-      - name: Run Tests & Capture Results
-        # Redirecting test output to a text file for artifact management
-        run: npm test > test-results.txt || echo "Tests Failed" > test-results.txt
+      - name: Run Tests
+        run: |
+          npm test > test-results.txt
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
         with:
-          name: test-report
+          name: test-results
           path: test-results.txt
 
   deploy:
-    needs: test 
-    runs-on: self-hosted 
+    name: Deploy Application
+    needs: test
+    runs-on: self-hosted
+    labels: [node-deploy]
+
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Install Dependencies
-        run: npm install --production
+        run: npm install
+
+      - name: Build Application (if needed)
+        run: npm run build || echo "No build step"
 
       - name: Deploy Application
         run: |
-          # Use PM2 to keep the app running in the background
-          # If PM2 isn't installed, 'node index.js' works but won't persist
-          pm2 restart node-app || pm2 start index.js --name node-app
+          pm2 stop node-app || true
+          pm2 start index.js --name node-app
